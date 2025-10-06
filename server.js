@@ -19,34 +19,9 @@ dotenv.config();
 
 const app = express();
 
-// Configure CORS
-const allowedOrigins = [
-    'https://planity-frontend-yaqv.vercel.app',
-    'http://localhost:5173',
-    'http://localhost:3000'
-];
-
-app.use(cors({
-    origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-        
-        if (allowedOrigins.indexOf(origin) === -1) {
-            return callback(null, false);
-        }
-        return callback(null, true);
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'X-Requested-With', 'Accept'],
-    exposedHeaders: ['Access-Control-Allow-Origin']
-}));
-
-// Handle preflight requests
-app.options('*', cors());
-
-// Handle OPTIONS preflight requests
-app.options('*', cors());
+// Basic middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.PORT || 5000;
 
 // Security middleware
@@ -72,31 +47,25 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
-// CORS configuration (support multiple origins and proper preflight handling)
-// Always include common dev ports (5173, 5174) and merge with any ENV-provided origins
-const defaultOrigins = [
-    'http://localhost:5173', 
-    'http://localhost:5174',
-    'https://planity-frontend-yaqv.vercel.app'
-];
-const envOriginsList = (process.env.FRONTEND_URLS || '')
-  .split(',')
-  .map(o => o.trim())
-  .filter(Boolean);
-const singleEnvOrigin = process.env.FRONTEND_URL ? [process.env.FRONTEND_URL.trim()] : [];
-const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOriginsList, ...singleEnvOrigin]));
-
+// CORS configuration
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl) and same-origin
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error(`Not allowed by CORS: ${origin}`));
-  },
+  origin: [
+    'https://planity-frontend-yaqv.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:3000'
+  ],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['Access-Control-Allow-Origin']
 };
+
+// Apply CORS configuration
+app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 
 app.use(cors(corsOptions));
 // Explicitly enable preflight across all routes
