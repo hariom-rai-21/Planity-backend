@@ -20,13 +20,30 @@ dotenv.config();
 const app = express();
 
 // Configure CORS
+const allowedOrigins = [
+    'https://planity-frontend-yaqv.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000'
+];
+
 app.use(cors({
-    origin: true, // Allow all origins temporarily for debugging
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) === -1) {
+            return callback(null, false);
+        }
+        return callback(null, true);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'X-Requested-With', 'Accept'],
     exposedHeaders: ['Access-Control-Allow-Origin']
 }));
+
+// Handle preflight requests
+app.options('*', cors());
 
 // Handle OPTIONS preflight requests
 app.options('*', cors());
@@ -57,7 +74,11 @@ app.use('/api/', limiter);
 
 // CORS configuration (support multiple origins and proper preflight handling)
 // Always include common dev ports (5173, 5174) and merge with any ENV-provided origins
-const defaultOrigins = ['http://localhost:5173', 'http://localhost:5174'];
+const defaultOrigins = [
+    'http://localhost:5173', 
+    'http://localhost:5174',
+    'https://planity-frontend-yaqv.vercel.app'
+];
 const envOriginsList = (process.env.FRONTEND_URLS || '')
   .split(',')
   .map(o => o.trim())
