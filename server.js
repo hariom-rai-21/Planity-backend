@@ -19,13 +19,17 @@ dotenv.config();
 
 const app = express();
 
-// Configure CORS with specific origin
+// Configure CORS
 app.use(cors({
-    origin: ['https://planity-frontend.vercel.app', 'http://localhost:5173'],
+    origin: true, // Allow all origins temporarily for debugging
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'X-Requested-With', 'Accept'],
+    exposedHeaders: ['Access-Control-Allow-Origin']
 }));
+
+// Handle OPTIONS preflight requests
+app.options('*', cors());
 const PORT = process.env.PORT || 5000;
 
 // Security middleware
