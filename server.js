@@ -42,30 +42,41 @@ app.use('/api/', limiter);
 // CORS configuration
 const allowedOrigins = [
   'https://planity-frontend-yaqv.vercel.app',
+  'https://planity-frontend.vercel.app',
+  'https://planity-frontend-git-main.vercel.app',
   'http://localhost:5173',
   'http://localhost:5174',
   'http://localhost:3000'
 ];
 
+// Enable CORS preflight for all routes
+app.options('*', cors());
+
 const corsOptions = {
   origin: function(origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+    // Allow requests with no origin (mobile apps, Postman, etc)
+    if (!origin) {
+      return callback(null, true);
     }
+
+    // Check if the origin is allowed
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // For development purposes, log unauthorized attempts
+    console.log(`Blocked request from unauthorized origin: ${origin}`);
+    return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'X-Requested-With', 'Accept'],
-  exposedHeaders: ['Access-Control-Allow-Origin']
+  exposedHeaders: ['Access-Control-Allow-Origin'],
+  maxAge: 600 // Cache preflight request results for 10 minutes
 };
 
-// Apply CORS configuration
+// Apply CORS configuration (must be before routes)
 app.use(cors(corsOptions));
-
-// Handle preflight requests
-app.options('*', cors(corsOptions));
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
